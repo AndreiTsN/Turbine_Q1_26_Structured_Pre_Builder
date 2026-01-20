@@ -48,7 +48,7 @@ uses a new naming scheme.
 
 Instead of the older approach used in the Rust Book:
 ```rust
-rand::thread_rng().gen_range(1..=100);
+let secret_number = rand::thread_rng().gen_range(1..=100);
 ```
 
 this project uses the modern API:
