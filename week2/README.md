@@ -80,10 +80,10 @@ Example transfer transactions:
 The starter files were provided with imports and basic scaffolding only.
 All required logic was implemented as part of the assignment.
 
-**`spl_init.ts`**  
+- **`spl_init.ts`**  
 Starter file contained imports and structure only. Implemented SPL mint initialization.
 
-**`spl_metadata.ts`**  
+- **`spl_metadata.ts`**  
 Starter file contained imports only. Implemented on-chain token metadata creation.
 
 At the start, signer configuration was:
@@ -113,12 +113,12 @@ was explicitly added to ensure stable interaction with the Metaplex Token Metada
 It registers the Token Metadata program ID in Umi, so Umi knows which on-chain
 program to use when building metadata-related instructions.
 
-**`spl_mint.ts`**
+- **`spl_mint.ts`**
 Starter file contained imports only. Implemented token minting logic.
 The mint authority is always passed as a Signer (Keypair), not as a PublicKey,
 since the authority must sign the transaction.
 
-**`spl_transfer.ts`**
+- **`spl_transfer.ts`**
 Starter file contained imports only. Implemented token transfers between ATAs.
 The owner of the source token account is always passed as a Signer (Keypair),
 as the transfer requires an explicit owner signature.
