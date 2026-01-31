@@ -41,7 +41,7 @@ to the creator’s associated token account (ATA).
 - **Explorer Link:**  
   https://explorer.solana.com/tx/5dgKoZK6ZD9AayU8x37jQ89C1saYH5rpuyiYj8riTPX1qpfxGhzNSqq9Fm368Pj54aGGgbfCcqaLXz98e6rw617V?cluster=devnet
 
-![Mint Transaction](./assets/mint_tx.jpg)
+![Mint Transaction](./ts/cluster1/metadata/assets/mint_tx.jpg)
 
 ---
 
