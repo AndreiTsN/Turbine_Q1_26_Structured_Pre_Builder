@@ -29,7 +29,7 @@ This project demonstrates:
 ### Token Page
 Screenshot showing token name, symbol, logo, and mint address.
 
-![Token Page](./assets/token_page.jpg)
+![Token Page](./ts/cluster1/metadata/assets/token_page.jpg)
 
 ### Minting Transaction
 The following transaction shows the initial minting of SHC tokens
