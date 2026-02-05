@@ -10,8 +10,11 @@ const umi = createUmi('https://api.devnet.solana.com');
 let keypair = umi.eddsa.createKeypairFromSecretKey(new Uint8Array(wallet));
 const signer = createSignerFromKeypair(umi, keypair);
 
-umi.use(irysUploader());
+umi.use(irysUploader({address: "https://devnet.irys.xyz/",}));
 umi.use(signerIdentity(signer));
+
+//https://arveave.net/<hash>
+//https://devnet.irys.xyz/<hash>
 
 (async () => {
     try {
@@ -19,12 +22,23 @@ umi.use(signerIdentity(signer));
         //2. Convert image to generic file.
         //3. Upload image
 
-        // const image = ???
+        const image = await readFile(
+            "./metadata/assets/nft/core_bee_worker.png" 
+            );
 
-        // const [myUri] = ??? 
-        // console.log("Your image URI: ", myUri);
+        const file = createGenericFile(
+            image, 
+            "core_bee_worker.png", 
+            {contentType: "image/png"}
+        );
+
+        const myUri = await umi.uploader.upload([file]);
+        console.log("Your image URI: ", myUri);
     }
     catch(error) {
         console.log("Oops.. Something went wrong", error);
     }
 })();
+
+
+// image uri 'https://gateway.irys.xyz/79yWjcv3cJhSHoP4CjkYddvDFiaweo8qtx5zyp7HzboX'

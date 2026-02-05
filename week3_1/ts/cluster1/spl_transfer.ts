@@ -9,15 +9,18 @@ const keypair = Keypair.fromSecretKey(new Uint8Array(wallet));
 const commitment: Commitment = "confirmed";
 const connection = new Connection("https://api.devnet.solana.com", commitment);
 
-// Mint address
-const mint_address = "2aKMuo3xdcnVgzN6CFzRJVoRWdgQ4bQQJSr7GjWzSxaM";
+// Mint addres
+const mint_address = "JxjPtZKhesWJtgRwPPzFC7m4mD86zxJYeqczvV1sKB5"; // nft mint address
+// const mint_address = "2aKMuo3xdcnVgzN6CFzRJVoRWdgQ4bQQJSr7GjWzSxaM"; // spl_mint_address
 const mint = new PublicKey(mint_address);
 // Recipient address
-const recipient_pubkey =  "56WzPhuoj9QLv5nEQoSSb8ibNAC3ZGssDEqt9wjmnePb";  // !!!!! add here recipient PubkicKey !!!!! 
+// GYwuN5mx3TqLsT4eKni37evsJuRA2av1VZERJNWiuVkp  //Blues [P3] wallet
+const recipient_pubkey =  "GYwuN5mx3TqLsT4eKni37evsJuRA2av1VZERJNWiuVkp";  // !!!!! add here recipient PubkicKey !!!!! 
 const to = new PublicKey(recipient_pubkey);
 
-const token_decimals = 1_000_000n;
-const amount = 10n * token_decimals;
+// const token_decimals = 1_000_000n;    // for spl_tokens
+const amount = 1n;  // for nft
+// const amount = 10n * token_decimals;  // for spl_tokens
 
 (async () => {
     try {
