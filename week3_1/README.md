@@ -28,7 +28,7 @@ Small previews are shown below for reference.
 
 Both **images** and **metadata JSON** are stored off-chain using decentralized storage.
 
-- Image storage: **Irys (Bundlr-compatible, Arweave-backed)**
+- Image storage: **Irys (Bundlr-compatible, Arweave-backed)** ->  //https://arveave.net/
 - Metadata JSON: stored on the same infrastructure
 - Solana stores only the **URI** pointing to metadata
 
@@ -128,6 +128,7 @@ This repository contains:
 
 ## Addition - NFT Flow Overview
 
+```text
 Local Image (PNG)
         |
         v
@@ -156,3 +157,4 @@ NFT Mint Account
 [spl_transfer.ts]
 Trade NFT (amount = 1)
 via Associated Token Accounts (ATA)
+```
