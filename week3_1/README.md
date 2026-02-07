@@ -16,9 +16,7 @@ The goal of this task is to:
 The following NFT images are stored directly in this repository and used as source assets.
 Small previews are shown below for reference.
 
-<img src="ts/cluster1/metadata/assets/nft/core_bee_worker.png" width="180" />
-<img src="ts/cluster1/metadata/assets/nft/core_bee_worker_002.png" width="180" />
-<img src="ts/cluster1/metadata/assets/nft/core_bee_worker_003.png" width="180" />
+<img src="ts/cluster1/metadata/assets/nft/core_bee_worker.png" width="180" /> <img src="ts/cluster1/metadata/assets/nft/core_bee_worker_002.png" width="180" /> <img src="ts/cluster1/metadata/assets/nft/core_bee_worker_003.png" width="180" />
 
 > These images were uploaded to decentralized storage and referenced from NFT metadata.
 
