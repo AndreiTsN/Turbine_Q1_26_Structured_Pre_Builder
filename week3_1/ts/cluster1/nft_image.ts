@@ -23,12 +23,12 @@ umi.use(signerIdentity(signer));
         //3. Upload image
 
         const image = await readFile(
-            "./metadata/assets/nft/core_bee_worker.png" 
+            "./metadata/assets/nft/core_bee_worker_003.png" 
             );
 
         const file = createGenericFile(
             image, 
-            "core_bee_worker.png", 
+            "core_bee_worker_003.png", 
             {contentType: "image/png"}
         );
 
@@ -41,4 +41,7 @@ umi.use(signerIdentity(signer));
 })();
 
 
-// image uri 'https://gateway.irys.xyz/79yWjcv3cJhSHoP4CjkYddvDFiaweo8qtx5zyp7HzboX'
+// core_bee_worker image uri 'https://gateway.irys.xyz/79yWjcv3cJhSHoP4CjkYddvDFiaweo8qtx5zyp7HzboX'
+// core_bee_worker image 'https://gateway.irys.xyz/EEhETrirySJACbd9xScsARG4JmuMxsSV6vfbpbGD6W3k'
+// core_bee_worker_002 'https://gateway.irys.xyz/6h8hrmh8GNhd33SBVHcYBn4mpnEt92vqvPbyjmuoWs5N'
+// core_bee_worker_003 https://gateway.irys.xyz/4nr5vPMz8sBXrCexUo3pLzEXupjoWX9N5CMAnrBz7U7d

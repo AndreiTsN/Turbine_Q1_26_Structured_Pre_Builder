@@ -16,12 +16,18 @@ umi.use(signerIdentity(signer));
     try {
         // Follow this JSON structure
         // https://docs.metaplex.com/programs/token-metadata/changelog/v1.0#json-structure
+        
+        // core_bee_worker
+        // mint1 const image = 'https://gateway.irys.xyz/79yWjcv3cJhSHoP4CjkYddvDFiaweo8qtx5zyp7HzboX'
+        // mint2 const image = 'https://gateway.irys.xyz/EEhETrirySJACbd9xScsARG4JmuMxsSV6vfbpbGD6W3k'
+        // mint3 core_bee_worker_002 'https://gateway.irys.xyz/6h8hrmh8GNhd33SBVHcYBn4mpnEt92vqvPbyjmuoWs5N'
+        // mint4 core_bee_worker_003 https://gateway.irys.xyz/4nr5vPMz8sBXrCexUo3pLzEXupjoWX9N5CMAnrBz7U7d
 
-        const image = 'https://gateway.irys.xyz/79yWjcv3cJhSHoP4CjkYddvDFiaweo8qtx5zyp7HzboX'
+        const image = 'https://gateway.irys.xyz/4nr5vPMz8sBXrCexUo3pLzEXupjoWX9N5CMAnrBz7U7d'
         const metadata = {
-             name: "Hive Core Worker",
+             name: "Hive Core Worker 003",
              symbol: "HCW",
-             description: "A core worker bee.",
+             description: "A core worker bee 003.",
              image: image,
              attributes: [
                  {trait_type: 'Role', value: 'Worker'}
@@ -44,4 +50,7 @@ umi.use(signerIdentity(signer));
     }
 })();
 
-// Your metadata URI:  https://gateway.irys.xyz/321LPTtwd9wv8ikbgPat3n7mVfRgFSKZGvQVgsX3RXiK
+// mint1 core_bee_worker Your metadata URI:  https://gateway.irys.xyz/321LPTtwd9wv8ikbgPat3n7mVfRgFSKZGvQVgsX3RXiK
+// mint2 core_bee_worker Your metadata URI:  https://gateway.irys.xyz/D3QBCwJnnMXJpupE4Ys9H9oPJexYVo2aEuFjfjgeLpvm
+// mint3 core_bee_worker_002 Your metadata URI:  https://gateway.irys.xyz/3jsogZy68FFfvT73Bqq1NoDgqqHUTTZUiKaJCFP3NfBr
+// mint4 core_bee_worker_003 Your metadata URI: https://gateway.irys.xyz/8VPrzpB3tTVQjQir7hwSgr3LK7V6byzP4PGhk2V25U8v
