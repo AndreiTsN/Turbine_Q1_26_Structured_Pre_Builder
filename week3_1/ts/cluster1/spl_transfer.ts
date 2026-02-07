@@ -11,15 +11,10 @@ const connection = new Connection("https://api.devnet.solana.com", commitment);
 
 // Mint addres
 const mint_address = "8a5goUWnMq3T3W77vtHn9eqJXwa5rgmzah99p4eQ98my"  // nft core_bee_worker_003
-//const mint_address = "DTsm34byoDyvv3hsUahBt4jYP9Qzxv5fh4jCTjUqs2H2" // nft core_bee_worker2
-// const mint_address = "JxjPtZKhesWJtgRwPPzFC7m4mD86zxJYeqczvV1sKB5"; // nft mint address
 // const mint_address = "2aKMuo3xdcnVgzN6CFzRJVoRWdgQ4bQQJSr7GjWzSxaM"; // spl_mint_address
 const mint = new PublicKey(mint_address);
-// Recipient address
-// GYwuN5mx3TqLsT4eKni37evsJuRA2av1VZERJNWiuVkp   // Blues [P3] wallet
-// 4ncsvGw6AuXFjgA328JaZHkjzNHTWLHw9yZ8A9JTqZ5n   // ROGUE_CODER
-// 61cT4TxVoDZ3Sga4fU8CjpEqwkPuDwYSSH63rJzFResJ   //   Akshay
-const recipient_pubkey =  "61cT4TxVoDZ3Sga4fU8CjpEqwkPuDwYSSH63rJzFResJ";  // !!!!! add here recipient PubkicKey !!!!! 
+// Recipient address - wallet 
+const recipient_pubkey =  "61cT4TxVoDZ3Sga4fU8CjpEqwkPuDwYSSH63rJzFResJ"; 
 const to = new PublicKey(recipient_pubkey);
 
 // const token_decimals = 1_000_000n;    // for spl_tokens
@@ -62,7 +57,3 @@ const amount = 1n;  // for nft
         console.error(`Oops, something went wrong: ${error}`)
     }
 })();
-
-
-//core_bee_ worker_2, sent to ROGUE_CODER 3zq4oUiYp1vND9uzj3BZ9MznZHaLWapjDib7FQ5CpTUgKjMW9Fn75HqunWv72fGqoKXyZbKHyDnbfvoHZ5ZP4gSE
-// core_bee_worker_003, sent to Akshay 3n162H6KGHSogxCJRv9stQWc6BUnWRgGgbojVg6DmZagHkscqdtW1oMrPeBj3FsdiC3F7Y9i7SrxQw1KNGzF891Q
