@@ -36,7 +36,8 @@ This project implements a simple SPL token escrow mechanism:
 ---
 
 ## Architecture (High-Level Flow)
-```text
+
+``` text
 make()
 ├─ Create escrow PDA
 ├─ Create vault ATA (authority = escrow)
