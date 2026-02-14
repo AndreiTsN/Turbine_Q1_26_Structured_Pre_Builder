@@ -36,7 +36,7 @@ This project implements a simple SPL token escrow mechanism:
 ---
 
 ## Architecture (High-Level Flow)
-
+```text
 make()
 ├─ Create escrow PDA
 ├─ Create vault ATA (authority = escrow)
@@ -52,6 +52,7 @@ refund()
 ├─ Transfer mint_a: vault → maker (PDA signer)
 ├─ Close vault
 └─ Close escrow
+```
 
 ## Rent Design Choice
 
