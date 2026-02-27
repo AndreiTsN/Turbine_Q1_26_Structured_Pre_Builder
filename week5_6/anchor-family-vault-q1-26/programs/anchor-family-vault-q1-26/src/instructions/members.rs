@@ -13,11 +13,9 @@ pub struct AddMember<'info> {
         bump = vault_state.state_bump,
     )]
     pub vault_state: Account<'info, VaultState>,
-
-    /// The member wallet address we add (does NOT need to sign)
-    /// CHECK: only used as a Pubkey for PDA derivation
-    pub member: UncheckedAccount<'info>,
-
+    
+    pub member: SystemAccount<'info>,   // memeber wallet already exists
+ 
     #[account(
         init,
         payer = vault_authority,
@@ -29,14 +27,7 @@ pub struct AddMember<'info> {
 
     pub system_program: Program<'info, System>,
 }
-
 pub fn add_member(ctx: Context<AddMember>, limit_per_withdraw: u64) -> Result<()> {
-    require_keys_eq!(
-        ctx.accounts.vault_state.vault_authority,
-        ctx.accounts.vault_authority.key(),
-        VaultError::Unauthorized
-    );
-
     let ms = &mut ctx.accounts.member_state;
     ms.vault_state = ctx.accounts.vault_state.key();
     ms.member = ctx.accounts.member.key();
@@ -57,8 +48,7 @@ pub struct FreezeMember<'info> {
     )]
     pub vault_state: Account<'info, VaultState>,
 
-    /// CHECK: only used for PDA derivation (same as in AddMember)
-    pub member: UncheckedAccount<'info>,
+    pub member: SystemAccount<'info>,   // memeber wallet already exists
 
     #[account(
         mut,
@@ -71,11 +61,6 @@ pub struct FreezeMember<'info> {
 }
 
 pub fn freeze_member(ctx: Context<FreezeMember>, frozen: bool) -> Result<()> {
-    require_keys_eq!(
-        ctx.accounts.vault_state.vault_authority,
-        ctx.accounts.vault_authority.key(),
-        VaultError::Unauthorized
-    );
 
     ctx.accounts.member_state.frozen = frozen;
     Ok(())
@@ -92,8 +77,7 @@ pub struct DeleteMember<'info> {
     )]
     pub vault_state: Account<'info, VaultState>,
 
-    /// CHECK: only used for PDA derivation
-    pub member: UncheckedAccount<'info>,
+    pub member: SystemAccount<'info>,   // memeber wallet already exists
 
     #[account(
         mut,
@@ -107,12 +91,6 @@ pub struct DeleteMember<'info> {
 }
 
 pub fn delete_member(ctx: Context<DeleteMember>) -> Result<()> {
-    require_keys_eq!(
-        ctx.accounts.vault_state.vault_authority,
-        ctx.accounts.vault_authority.key(),
-        VaultError::Unauthorized
-    );
-
     require!(
         ctx.accounts.member_state.frozen,
         VaultError::MemberNotFrozen
