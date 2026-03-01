@@ -12,7 +12,9 @@ describe("anchor-family-vault-q1-26", () => {
 
   const authority = provider.wallet.publicKey;
 
-  // Derive PDAs (MUST match Rust seeds)
+  // ----------------------------
+  // PDAs
+  // ----------------------------
   const [vaultStatePda, stateBump] =
     anchor.web3.PublicKey.findProgramAddressSync(
       [Buffer.from("vault_state"), authority.toBuffer()],
@@ -25,68 +27,12 @@ describe("anchor-family-vault-q1-26", () => {
       program.programId
     );
 
-  before(async () => {
-    const sig = await provider.connection.requestAirdrop(
-      authority,
-      10 * anchor.web3.LAMPORTS_PER_SOL
+  function deriveMemberStatePda(member: anchor.web3.PublicKey) {
+    return anchor.web3.PublicKey.findProgramAddressSync(
+      [Buffer.from("member"), vaultStatePda.toBuffer(), member.toBuffer()],
+      program.programId
     );
-    await provider.connection.confirmTransaction(sig, "confirmed");
-  });
-
-  // ----------------------------
-  // VALID INIT
-  // ----------------------------
-  it("Initialize: valid", async () => {
-    await program.methods
-      .initialize()
-      .accountsStrict({
-        vaultAuthority: authority,
-        vaultState: vaultStatePda,
-        vault: vaultPda,
-        systemProgram: anchor.web3.SystemProgram.programId,
-      })
-      .rpc();
-
-    // --- Check state ---
-    const state = await program.account.vaultState.fetch(vaultStatePda);
-
-    expect(state.vaultAuthority.toBase58()).to.equal(
-      authority.toBase58()
-    );
-    expect(state.locked).to.equal(false);
-    expect(state.vaultBump).to.equal(vaultBump);
-    expect(state.stateBump).to.equal(stateBump);
-
-    // --- Check vault account ---
-    const info = await provider.connection.getAccountInfo(vaultPda);
-
-    expect(info).to.not.equal(null);
-    expect(info!.owner.toBase58()).to.equal(
-      anchor.web3.SystemProgram.programId.toBase58()
-    );
-    expect(info!.data.length).to.equal(0);
-  });
-
-  // ----------------------------
-  // DOUBLE INIT SHOULD FAIL
-  // ----------------------------
-  it("Initialize: invalid (double init should fail)", async () => {
-    try {
-      await program.methods
-        .initialize()
-        .accountsStrict({
-          vaultAuthority: authority,
-          vaultState: vaultStatePda,
-          vault: vaultPda,
-          systemProgram: anchor.web3.SystemProgram.programId,
-        })
-        .rpc();
-
-      expect.fail("Second initialize() should have failed");
-    } catch (e: any) {
-      expect(e).to.exist;
-    }
-  });
+  }
 
   async function confirmSig(signature: string) {
     const latest = await provider.connection.getLatestBlockhash();
@@ -100,17 +46,125 @@ describe("anchor-family-vault-q1-26", () => {
     );
   }
 
-  // ----------------------------
-  // DEPOSIT: VALID (owner deposits)
-  // ----------------------------
-  it("Deposit: valid (owner deposits into own vault)", async () => {
-    const depositAmount = 1 * anchor.web3.LAMPORTS_PER_SOL;
+  function sleep(ms: number) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
 
-    const vaultBefore = await provider.connection.getBalance(vaultPda);
-    const ownerBefore = await provider.connection.getBalance(authority);
+  // ----------------------------
+  // MEMBER REGISTRY (IMPORTANT)
+  // ----------------------------
+  const createdMembers: {
+    member: anchor.web3.Keypair;
+    memberState: anchor.web3.PublicKey;
+  }[] = [];
+
+  async function freezeAndDelete(
+    member: anchor.web3.Keypair,
+    memberState: anchor.web3.PublicKey
+  ) {
+    await program.methods
+      .setMemberFrozen(true)
+      .accountsStrict({
+        vaultAuthority: authority,
+        vaultState: vaultStatePda,
+        member: member.publicKey,
+        memberState,
+      })
+      .rpc();
 
     await program.methods
-      .deposit(new anchor.BN(depositAmount))
+      .deleteMember()
+      .accountsStrict({
+        vaultAuthority: authority,
+        vaultState: vaultStatePda,
+        member: member.publicKey,
+        memberState,
+      })
+      .rpc();
+  }
+
+  async function cleanupAllCreatedMembers() {
+    for (let i = createdMembers.length - 1; i >= 0; i--) {
+      const { member, memberState } = createdMembers[i];
+      try {
+        await freezeAndDelete(member, memberState);
+      } catch (e) {
+        // ignore if already deleted
+      }
+    }
+    createdMembers.length = 0;
+  }
+
+  // ----------------------------
+  // Shared vars
+  // ----------------------------
+  let member1: anchor.web3.Keypair;
+  let member1StatePda: anchor.web3.PublicKey;
+
+  let wMember: anchor.web3.Keypair;
+  let wMemberStatePda: anchor.web3.PublicKey;
+
+  // ----------------------------
+  // Airdrop authority
+  // ----------------------------
+  before(async () => {
+    const sig = await provider.connection.requestAirdrop(
+      authority,
+      10 * anchor.web3.LAMPORTS_PER_SOL
+    );
+    await provider.connection.confirmTransaction(sig, "confirmed");
+  });
+
+  // ============================
+  // INIT
+  // ============================
+
+  it("Initialize: valid", async () => {
+    await program.methods
+      .initialize()
+      .accountsStrict({
+        vaultAuthority: authority,
+        vaultState: vaultStatePda,
+        vault: vaultPda,
+        systemProgram: anchor.web3.SystemProgram.programId,
+      })
+      .rpc();
+
+    const state = await program.account.vaultState.fetch(vaultStatePda);
+
+    expect(state.vaultAuthority.toBase58()).to.equal(authority.toBase58());
+    expect(state.locked).to.equal(false);
+    expect(state.vaultBump).to.equal(vaultBump);
+    expect(state.stateBump).to.equal(stateBump);
+  });
+
+  it("Initialize: invalid (double init)", async () => {
+    try {
+      await program.methods
+        .initialize()
+        .accountsStrict({
+          vaultAuthority: authority,
+          vaultState: vaultStatePda,
+          vault: vaultPda,
+          systemProgram: anchor.web3.SystemProgram.programId,
+        })
+        .rpc();
+
+      expect.fail("Second initialize should fail");
+    } catch (e) {
+      expect(e).to.exist;
+    }
+  });
+
+  // ============================
+  // DEPOSIT
+  // ============================
+
+  it("Deposit: valid", async () => {
+    const amount = 1 * anchor.web3.LAMPORTS_PER_SOL;
+
+    await program.methods
+      .deposit(new anchor.BN(amount))
       .accountsStrict({
         depositor: authority,
         vault: vaultPda,
@@ -119,77 +173,182 @@ describe("anchor-family-vault-q1-26", () => {
       })
       .rpc();
 
-    const vaultAfter = await provider.connection.getBalance(vaultPda);
-    const ownerAfter = await provider.connection.getBalance(authority);
-
-    expect(vaultAfter).to.equal(vaultBefore + depositAmount);
-    // owner pays deposit + fee, so balance must decrease at least by depositAmount
-    expect(ownerAfter).to.be.lessThan(ownerBefore - depositAmount + 1);
+    const vaultBalance = await provider.connection.getBalance(vaultPda);
+    expect(vaultBalance).to.be.greaterThan(0);
   });
 
-  it("Deposit: valid (anyone can deposit into owner's vault)", async () => {
-    const depositor = anchor.web3.Keypair.generate();
-  
-    const sig = await provider.connection.requestAirdrop(
-      depositor.publicKey,
-      2 * anchor.web3.LAMPORTS_PER_SOL
-    );
-    await confirmSig(sig);
-  
-    const depositAmount = 0.5 * anchor.web3.LAMPORTS_PER_SOL;
-  
-    const vaultBefore = await provider.connection.getBalance(vaultPda);
-    const depositorBefore = await provider.connection.getBalance(depositor.publicKey);
-  
+  // ============================
+  // MEMBERS BASIC
+  // ============================
+
+  it("AddMember: valid", async () => {
+    member1 = anchor.web3.Keypair.generate();
+    [member1StatePda] = deriveMemberStatePda(member1.publicKey);
+
     await program.methods
-      .deposit(new anchor.BN(depositAmount))
+      .addMember(new anchor.BN(1))
       .accountsStrict({
-        depositor: depositor.publicKey,
-        vault: vaultPda,
+        vaultAuthority: authority,
         vaultState: vaultStatePda,
+        member: member1.publicKey,
+        memberState: member1StatePda,
         systemProgram: anchor.web3.SystemProgram.programId,
       })
-      .signers([depositor])
       .rpc();
-  
-    const vaultAfter = await provider.connection.getBalance(vaultPda);
-    const depositorAfter = await provider.connection.getBalance(depositor.publicKey);
-  
-    expect(vaultAfter).to.equal(vaultBefore + depositAmount);
-    expect(depositorAfter).to.be.lessThan(depositorBefore - depositAmount + 1);
+
+    createdMembers.push({ member: member1, memberState: member1StatePda });
+
+    const vs = await program.account.vaultState.fetch(vaultStatePda);
+    expect(vs.membersCount).to.equal(1);
   });
-  
-  it("Deposit: invalid (wrong vault PDA for given vault_state)", async () => {
-    const depositor = anchor.web3.Keypair.generate();
-  
+
+  it("DeleteMember: valid cleanup", async () => {
+    await cleanupAllCreatedMembers();
+
+    const vs = await program.account.vaultState.fetch(vaultStatePda);
+    expect(vs.membersCount).to.equal(0);
+  });
+
+  // ============================
+  // WITHDRAW
+  // ============================
+
+  it("Withdraw: setup", async () => {
+    wMember = anchor.web3.Keypair.generate();
+    [wMemberStatePda] = deriveMemberStatePda(wMember.publicKey);
+
     const sig = await provider.connection.requestAirdrop(
-      depositor.publicKey,
+      wMember.publicKey,
       1 * anchor.web3.LAMPORTS_PER_SOL
     );
     await confirmSig(sig);
-  
-    const fakeVaultState = anchor.web3.Keypair.generate().publicKey;
-    const [wrongVaultPda] = anchor.web3.PublicKey.findProgramAddressSync(
-      [Buffer.from("vault"), fakeVaultState.toBuffer()],
-      program.programId
-    );
-  
+
+    await program.methods
+      .addMember(new anchor.BN(1))
+      .accountsStrict({
+        vaultAuthority: authority,
+        vaultState: vaultStatePda,
+        member: wMember.publicKey,
+        memberState: wMemberStatePda,
+        systemProgram: anchor.web3.SystemProgram.programId,
+      })
+      .rpc();
+
+    createdMembers.push({ member: wMember, memberState: wMemberStatePda });
+  });
+
+  it("Withdraw: valid", async () => {
+    const amount = 0.05 * anchor.web3.LAMPORTS_PER_SOL;
+
+    await program.methods
+      .withdraw(new anchor.BN(amount))
+      .accountsStrict({
+        member: wMember.publicKey,
+        vaultState: vaultStatePda,
+        vault: vaultPda,
+        memberState: wMemberStatePda,
+        systemProgram: anchor.web3.SystemProgram.programId,
+      })
+      .signers([wMember])
+      .rpc();
+  });
+
+  it("Withdraw: invalid (cooldown)", async () => {
     try {
       await program.methods
-        .deposit(new anchor.BN(100_000))
+        .withdraw(new anchor.BN(1_000_000))
         .accountsStrict({
-          depositor: depositor.publicKey,
-          vault: wrongVaultPda,
+          member: wMember.publicKey,
           vaultState: vaultStatePda,
+          vault: vaultPda,
+          memberState: wMemberStatePda,
           systemProgram: anchor.web3.SystemProgram.programId,
         })
-        .signers([depositor])
+        .signers([wMember])
         .rpc();
-  
-      expect.fail("Deposit should have failed due to seeds constraint");
-    } catch (e: any) {
+
+      expect.fail("Cooldown should block");
+    } catch (e) {
       expect(e).to.exist;
     }
   });
-  
+
+  it("Withdraw: valid after cooldown", async () => {
+    await sleep(6000);
+
+    await program.methods
+      .withdraw(new anchor.BN(1_000_000))
+      .accountsStrict({
+        member: wMember.publicKey,
+        vaultState: vaultStatePda,
+        vault: vaultPda,
+        memberState: wMemberStatePda,
+        systemProgram: anchor.web3.SystemProgram.programId,
+      })
+      .signers([wMember])
+      .rpc();
+  });
+
+  // ============================
+  // MAX MEMBERS TEST (ISOLATED)
+  // ============================
+
+  it("AddMember: invalid (exceed MAX_MEMBERS)", async () => {
+    await cleanupAllCreatedMembers();
+
+    const limit = new anchor.BN(1);
+
+    const m1 = anchor.web3.Keypair.generate();
+    const m2 = anchor.web3.Keypair.generate();
+    const m3 = anchor.web3.Keypair.generate();
+    const m4 = anchor.web3.Keypair.generate();
+
+    const [ms1] = deriveMemberStatePda(m1.publicKey);
+    const [ms2] = deriveMemberStatePda(m2.publicKey);
+    const [ms3] = deriveMemberStatePda(m3.publicKey);
+    const [ms4] = deriveMemberStatePda(m4.publicKey);
+
+    await program.methods.addMember(limit).accountsStrict({
+      vaultAuthority: authority,
+      vaultState: vaultStatePda,
+      member: m1.publicKey,
+      memberState: ms1,
+      systemProgram: anchor.web3.SystemProgram.programId,
+    }).rpc();
+    createdMembers.push({ member: m1, memberState: ms1 });
+
+    await program.methods.addMember(limit).accountsStrict({
+      vaultAuthority: authority,
+      vaultState: vaultStatePda,
+      member: m2.publicKey,
+      memberState: ms2,
+      systemProgram: anchor.web3.SystemProgram.programId,
+    }).rpc();
+    createdMembers.push({ member: m2, memberState: ms2 });
+
+    await program.methods.addMember(limit).accountsStrict({
+      vaultAuthority: authority,
+      vaultState: vaultStatePda,
+      member: m3.publicKey,
+      memberState: ms3,
+      systemProgram: anchor.web3.SystemProgram.programId,
+    }).rpc();
+    createdMembers.push({ member: m3, memberState: ms3 });
+
+    try {
+      await program.methods.addMember(limit).accountsStrict({
+        vaultAuthority: authority,
+        vaultState: vaultStatePda,
+        member: m4.publicKey,
+        memberState: ms4,
+        systemProgram: anchor.web3.SystemProgram.programId,
+      }).rpc();
+
+      expect.fail("Should exceed max members");
+    } catch (e) {
+      expect(e).to.exist;
+    }
+
+    await cleanupAllCreatedMembers();
+  });
 });

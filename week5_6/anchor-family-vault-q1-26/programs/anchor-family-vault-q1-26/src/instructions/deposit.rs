@@ -25,7 +25,7 @@ pub struct Deposit<'info> {
 }
 
 impl<'info> Deposit<'info> {
-    pub fn deposit(&mut self, amount: u64) -> Result<()> {
+    pub fn _deposit(&mut self, amount: u64) -> Result<()> {
         let cpi_program = self.system_program.to_account_info();
         let cpi_accounts = Transfer {
             from: self.depositor.to_account_info(),

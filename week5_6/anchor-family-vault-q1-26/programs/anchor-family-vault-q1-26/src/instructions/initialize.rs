@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_lang::system_program::{self, CreateAccount};
-
 use crate::state::VaultState;
+use crate::state::DEFAULT_MAX_MEMBERS;
 
 
 #[derive(Accounts)]
@@ -62,12 +62,10 @@ impl<'info> Initialize<'info> {
         // save owner and bump for farther use
         self.vault_state.vault_authority = self.vault_authority.key();
         self.vault_state.locked = false;
+        self.vault_state.max_members = DEFAULT_MAX_MEMBERS;
+        self.vault_state.members_count = 0;
         self.vault_state.vault_bump = bumps.vault;
         self.vault_state.state_bump = bumps.vault_state;
-
         Ok(())
-
     }
-
-
 }

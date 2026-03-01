@@ -9,6 +9,7 @@ pub struct AddMember<'info> {
     pub vault_authority: Signer<'info>,
 
     #[account(
+        mut,
         seeds = [b"vault_state", vault_authority.key().as_ref()],
         bump = vault_state.state_bump,
     )]
@@ -27,19 +28,30 @@ pub struct AddMember<'info> {
 
     pub system_program: Program<'info, System>,
 }
-pub fn add_member(ctx: Context<AddMember>, limit_per_withdraw: u64) -> Result<()> {
-    let ms = &mut ctx.accounts.member_state;
-    ms.vault_state = ctx.accounts.vault_state.key();
-    ms.member = ctx.accounts.member.key();
-    ms.frozen = false;
-    ms.limit_per_withdraw = limit_per_withdraw;
-    ms.bump = ctx.bumps.member_state;
 
-    Ok(())
+impl<'info> AddMember<'info> {
+    pub fn _add_member(&mut self, limit_per_withdraw: u64, bump: u8) -> Result<()> {
+        require!(
+            self.vault_state.members_count < self.vault_state.max_members,
+            VaultError::MaxMembersReached
+        );
+
+        let member_state = &mut self.member_state;
+        member_state.vault_state = self.vault_state.key();
+        member_state.member = self.member.key();
+        member_state.frozen = false;
+        member_state.limit_per_withdraw = limit_per_withdraw;
+        member_state.bump = bump;
+        member_state.frozen_until_ts = 0;
+        self.vault_state.members_count = self.vault_state.members_count.checked_add(1).ok_or(VaultError::MemberCountOverflow)?;
+        
+        Ok(())
+    }
 }
 
+
 #[derive(Accounts)]
-pub struct FreezeMember<'info> {
+pub struct SetMemberFrozen<'info> {
     pub vault_authority: Signer<'info>,
 
     #[account(
@@ -54,17 +66,18 @@ pub struct FreezeMember<'info> {
         mut,
         seeds = [b"member", vault_state.key().as_ref(), member.key().as_ref()],
         bump = member_state.bump,
-        has_one = vault_state @ VaultError::InvalidMemberState,
-        has_one = member @ VaultError::InvalidMemberState,
     )]
     pub member_state: Account<'info, MemberState>,
 }
 
-pub fn freeze_member(ctx: Context<FreezeMember>, frozen: bool) -> Result<()> {
+impl<'info> SetMemberFrozen<'info> {
+    pub fn _set_member_frozen(&mut self,  frozen: bool) -> Result<()> {
+        self.member_state.frozen = frozen;
+        Ok(())
 
-    ctx.accounts.member_state.frozen = frozen;
-    Ok(())
+    }
 }
+
 
 #[derive(Accounts)]
 pub struct DeleteMember<'info> {
@@ -72,6 +85,7 @@ pub struct DeleteMember<'info> {
     pub vault_authority: Signer<'info>,
 
     #[account(
+        mut,
         seeds = [b"vault_state", vault_authority.key().as_ref()],
         bump = vault_state.state_bump,
     )]
@@ -84,18 +98,24 @@ pub struct DeleteMember<'info> {
         close = vault_authority,
         seeds = [b"member", vault_state.key().as_ref(), member.key().as_ref()],
         bump = member_state.bump,
-        has_one = vault_state @ VaultError::InvalidMemberState,
-        has_one = member @ VaultError::InvalidMemberState,
+        
     )]
     pub member_state: Account<'info, MemberState>,
 }
 
-pub fn delete_member(ctx: Context<DeleteMember>) -> Result<()> {
-    require!(
-        ctx.accounts.member_state.frozen,
-        VaultError::MemberNotFrozen
-    );
+impl<'info> DeleteMember<'info> {
+    pub fn _delete_member(&mut self) -> Result<()> {
 
-    // closing happens automatically via `close = vault_authority`
-    Ok(())
+        require!(
+            self.member_state.frozen,
+            VaultError::MemberNotFrozen
+        );
+
+        self.vault_state.members_count = self.vault_state.members_count.checked_sub(1).ok_or(VaultError::MemberCountUnderflow)?;
+        
+
+        // closing happens automatically via `close = vault_authority`
+        Ok(())
+}
+
 }
