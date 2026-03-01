@@ -27,7 +27,7 @@ All instruction paths tested locally.
 
 ## Local Test Result Screenshot:
 
-assets/turbin_week56_test_result.jpg
+![Week 5–6 Local Test Results](assets/turbin_week56_test_result.jpg)
 
 ### Devnet Deployment
 Program ID 
