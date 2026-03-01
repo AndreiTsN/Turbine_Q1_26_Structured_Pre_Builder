@@ -40,7 +40,7 @@ Deploy Transaction
 https://explorer.solana.com/tx/4zoLh6bbmiBJ2oWb6hmvnDkR8eRBfTczPyqsPWZ6BZwp5skLdKPu96W2mxpeshRtFN1fqACxwKUsGBCpCnuVD48m?cluster=devnet
 
 Deploy Screenshot:
-assets/turbin_week56_deployed_on_dev.jpg
+![Deployed on Devnet](assets/turbin_week56_deployed_on_dev.jpg)
 
 Devnet Smoke Test
 
