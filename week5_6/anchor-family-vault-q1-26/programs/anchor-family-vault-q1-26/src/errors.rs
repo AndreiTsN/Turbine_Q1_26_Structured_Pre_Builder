@@ -29,5 +29,5 @@ pub enum VaultError {
     #[msg("Vault must be empty to close")]
     VaultNotEmpty,
     #[msg("All members must be removed before closing the vault")]
-    MembersStillExist,
+    MembersStillExist
 }

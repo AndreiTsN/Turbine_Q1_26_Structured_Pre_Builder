@@ -43,9 +43,9 @@ pub mod anchor_family_vault_q1_26 {
     ctx.accounts._withdraw(amount)
 }
 
-// pub fn close_vault(ctx: Context<Close>) -> Result<()> {
-//     ctx.accounts._close()
-// }
+pub fn close_vault(ctx: Context<Close>) -> Result<()> {
+    ctx.accounts._close()
+}
 
 }
 

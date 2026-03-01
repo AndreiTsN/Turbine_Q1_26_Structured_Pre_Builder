@@ -1,4 +1,5 @@
 use anchor_lang::prelude::*;
+use anchor_lang::system_program::{transfer, Transfer};
 
 use crate::errors::VaultError;
 use crate::state::VaultState;
@@ -31,10 +32,29 @@ impl<'info> Close<'info> {
         // ensure no members left
         require!(self.vault_state.members_count == 0, VaultError::MembersStillExist);
 
-        // ensure vault is empty (no SOL left)
-        require!(self.vault.to_account_info().lamports() == 0, VaultError::VaultNotEmpty);
+        // 2) drain vault -> authority (if balance > 0)
+        let amount = self.vault.to_account_info().lamports();
+        if amount > 0 {
+            let cpi_program = self.system_program.to_account_info();
+            let cpi_accounts = Transfer {
+                from: self.vault.to_account_info(),
+                to: self.vault_authority.to_account_info(),
+                    
+            };
+            let signer_seeds: &[&[&[u8]]] = &[&[
+                b"vault", 
+                self.vault_state.to_account_info().key.as_ref(), 
+                &[self.vault_state.vault_bump]]]; 
+            
+            let cpi_ctx =CpiContext::new_with_signer(
+                cpi_program, 
+                cpi_accounts, 
+                signer_seeds);
+            transfer(cpi_ctx, amount)?;
+        }
 
-        // closing happens automatically via `close = vault_authority`
+        // 3) vault_state will be closed automatically (close = vault_authority)
         Ok(())
+
     }
 }

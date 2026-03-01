@@ -351,4 +351,189 @@ describe("anchor-family-vault-q1-26", () => {
 
     await cleanupAllCreatedMembers();
   });
+
+    // ----------------------------
+  // CLOSE
+  // ----------------------------
+  it("Close: invalid (members still exist)", async () => {
+    // гарантируем, что есть хотя бы один member
+    const m = anchor.web3.Keypair.generate();
+    const [ms] = deriveMemberStatePda(m.publicKey);
+
+    await program.methods
+      .addMember(new anchor.BN(1))
+      .accountsStrict({
+        vaultAuthority: authority,
+        vaultState: vaultStatePda,
+        member: m.publicKey,
+        memberState: ms,
+        systemProgram: anchor.web3.SystemProgram.programId,
+      })
+      .rpc();
+
+    // пробуем закрыть — должно упасть, потому что members_count > 0
+    try {
+      await program.methods
+        .closeVault()
+        .accountsStrict({
+          vaultAuthority: authority,
+          vaultState: vaultStatePda,
+          vault: vaultPda,
+          systemProgram: anchor.web3.SystemProgram.programId,
+        })
+        .rpc();
+
+      expect.fail("close should fail because members still exist");
+    } catch (e: any) {
+      expect(e).to.exist;
+    }
+
+    // cleanup: freeze + delete (чтобы следующий тест мог закрыть)
+    await program.methods
+      .setMemberFrozen(true)
+      .accountsStrict({
+        vaultAuthority: authority,
+        vaultState: vaultStatePda,
+        member: m.publicKey,
+        memberState: ms,
+      })
+      .rpc();
+
+    await program.methods
+      .deleteMember()
+      .accountsStrict({
+        vaultAuthority: authority,
+        vaultState: vaultStatePda,
+        member: m.publicKey,
+        memberState: ms,
+      })
+      .rpc();
+
+    const vs = await program.account.vaultState.fetch(vaultStatePda);
+    expect(vs.membersCount).to.equal(0);
+  });
+
+it("Close: valid (drains vault and closes vault_state)", async () => {
+  // убедимся что vault не пустой (если пустой — можно сделать небольшой deposit)
+  let vaultBefore = await provider.connection.getBalance(vaultPda);
+  if (vaultBefore === 0) {
+    const depositAmount = 0.2 * anchor.web3.LAMPORTS_PER_SOL;
+    await program.methods
+      .deposit(new anchor.BN(depositAmount))
+      .accountsStrict({
+        depositor: authority,
+        vault: vaultPda,
+        vaultState: vaultStatePda,
+        systemProgram: anchor.web3.SystemProgram.programId,
+      })
+      .rpc();
+    vaultBefore = await provider.connection.getBalance(vaultPda);
+  }
+
+  expect(vaultBefore).to.be.greaterThan(0);
+
+  await program.methods.closeVault()
+    .accountsStrict({
+      vaultAuthority: authority,
+      vaultState: vaultStatePda,
+      vault: vaultPda,
+      systemProgram: anchor.web3.SystemProgram.programId,
+    })
+    .rpc();
+
+  // vault drained
+  const vaultAfter = await provider.connection.getBalance(vaultPda);
+  expect(vaultAfter).to.equal(0);
+
+  // vault_state closed
+  try {
+    await program.account.vaultState.fetch(vaultStatePda);
+    expect.fail("vault_state should be closed");
+  } catch (e: any) {
+    expect(e).to.exist;
+  }
+});
+});
+
+describe.only("DEVNET SMOKE", () => {
+  const provider = anchor.AnchorProvider.env();
+  anchor.setProvider(provider);
+
+  const program = anchor.workspace
+    .anchorFamilyVaultQ126 as Program<AnchorFamilyVaultQ126>;
+
+  const authority = provider.wallet.publicKey;
+
+  const [vaultStatePda] = anchor.web3.PublicKey.findProgramAddressSync(
+    [Buffer.from("vault_state"), authority.toBuffer()],
+    program.programId
+  );
+
+  const [vaultPda] = anchor.web3.PublicKey.findProgramAddressSync(
+    [Buffer.from("vault"), vaultStatePda.toBuffer()],
+    program.programId
+  );
+
+  it("Smoke: init(if needed) + deposit + add_member(authority) + withdraw", async () => {
+    const depositAmount = 0.02 * anchor.web3.LAMPORTS_PER_SOL;
+    const withdrawAmount = 0.005 * anchor.web3.LAMPORTS_PER_SOL;
+  
+    // --- derive member_state for authority
+    const [authorityMemberStatePda] = anchor.web3.PublicKey.findProgramAddressSync(
+      [Buffer.from("member"), vaultStatePda.toBuffer(), authority.toBuffer()],
+      program.programId
+    );
+  
+    // --- init if needed
+    const stateInfo = await provider.connection.getAccountInfo(vaultStatePda);
+    if (!stateInfo) {
+      await program.methods
+        .initialize()
+        .accountsStrict({
+          vaultAuthority: authority,
+          vaultState: vaultStatePda,
+          vault: vaultPda,
+          systemProgram: anchor.web3.SystemProgram.programId,
+        })
+        .rpc();
+    }
+  
+    // --- deposit (authority deposits)
+    await program.methods
+      .deposit(new anchor.BN(depositAmount))
+      .accountsStrict({
+        depositor: authority,
+        vault: vaultPda,
+        vaultState: vaultStatePda,
+        systemProgram: anchor.web3.SystemProgram.programId,
+      })
+      .rpc();
+  
+    // --- add_member(authority) if needed
+    const msInfo = await provider.connection.getAccountInfo(authorityMemberStatePda);
+    if (!msInfo) {
+      await program.methods
+        .addMember(new anchor.BN(1)) // limit arg (you don't use it right now)
+        .accountsStrict({
+          vaultAuthority: authority,
+          vaultState: vaultStatePda,
+          member: authority,
+          memberState: authorityMemberStatePda,
+          systemProgram: anchor.web3.SystemProgram.programId,
+        })
+        .rpc();
+    }
+  
+    // --- withdraw small (authority as member)
+    await program.methods
+      .withdraw(new anchor.BN(withdrawAmount))
+      .accountsStrict({
+        member: authority,
+        vaultState: vaultStatePda,
+        vault: vaultPda,
+        memberState: authorityMemberStatePda,
+        systemProgram: anchor.web3.SystemProgram.programId,
+      })
+      .rpc();
+  });
 });
