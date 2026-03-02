@@ -57,7 +57,7 @@ Explorer Link
 https://explorer.solana.com/tx/2T9fE4LhArepLrKUfFSDRrcKqHkWjSr5Xk8DoN4NM3djQRwckPKeNuAnLCFhuVxEjby8tNMocpuQd5RLLWu3GbxQ?cluster=devnet
 
 
-### Family Vault — Functional Overview
+## Family Vault — Functional Overview
 
 Family Vault is a role-controlled SOL vault built on Solana using Anchor.
 
@@ -65,46 +65,46 @@ It allows a vault authority to manage family members with controlled withdrawal 
 
 ## Core Functionality
 
-# Vault Initialization
+### Vault Initialization
 
 Creates a VaultState PDA and a Vault PDA.
-
 Sets the vault authority and configuration parameters.
 
-# Deposit
+### Deposit
 
 Any signer can deposit SOL into the vault.
-
 Funds are stored in a PDA-controlled SystemAccount.
 
-# Member Management
+### Member Management
 
 Add a new member (creates MemberState PDA).
-
 Freeze / unfreeze a member.
-
 Delete a member (must be frozen).
-
 Enforces a maximum number of members.
 
-# Withdraw
+### Withdraw
 
 Only registered members can withdraw.
-
 Withdrawals are:
-
 Limited by a per-withdraw cap.
-
 Restricted by cooldown period.
-
 Blocked if member is frozen.
-
 Blocked if vault is locked.
 
-# Close Vault
+### Close Vault
 
 Allowed only when no members remain.
-
 Drains remaining SOL to authority.
-
 Closes VaultState safely.
+
+# Future Improvements
+
+Currently, the withdraw limit and cooldown period are hardcoded as default constants inside the program:
+``` DEFAULT_WITHDRAW_LIMIT_LAMPORTS ```
+``` DEFAULT_WITHDRAW_COOLDOWN_SECONDS ```
+
+In future versions, the plan is to allow the vault authority to configure:
+- Default per-withdraw SOL limit
+- Cooldown duration between withdrawals
+- Support per-member configurable limits
+This would make the protocol more flexible and suitable for real-world use cases.
